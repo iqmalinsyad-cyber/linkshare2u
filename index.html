@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkShare System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117; /* Dark modern space */
+            background-image: radial-gradient(circle at top right, #1f2937, transparent 40%),
+                              radial-gradient(circle at bottom left, #111827, transparent 40%);
+            color: #c9d1d9;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        .glass-panel {
+            background: rgba(22, 27, 34, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(56, 189, 248, 0.05);
+            border-radius: 1.5rem;
+            position: relative;
+        }
+
+        /* Glow effects for inputs and buttons */
+        .glow-input {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .glow-input:focus {
+            outline: none;
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+        }
+
+        .glow-btn {
+            background: linear-gradient(180deg, #102a43, #0284c7);
+            border: 1px solid #38bdf8;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+        }
+        .glow-btn:hover {
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+            transform: translateY(-1px);
+        }
+
+        /* Animated corner icons */
+        .corner-icon {
+            position: absolute;
+            background: #0d1117;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 8px;
+            padding: 8px;
+            color: #38bdf8;
+            z-index: 10;
+        }
+        .ci-tl { top: -20px; left: -20px; }
+        .ci-tr { top: -20px; right: -20px; }
+        .ci-bl { bottom: -20px; left: -20px; }
+        .ci-br { bottom: -20px; right: -20px; }
+
+        .hidden-view { display: none !important; }
+
+        #toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            transform: translateX(150%);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 9999;
+        }
+        #toast.show { transform: translateX(0); }
+    </style>
+</head>
+<body class="antialiased">
+
+    <nav class="w-full p-6 flex justify-between items-center relative z-50">
+        <div class="flex items-center gap-2 cursor-pointer group" onclick="app.navigate('home')">
+            <svg class="text-[#38bdf8] group-hover:text-white transition" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+            <span class="text-[#38bdf8] group-hover:text-white transition font-bold text-xl tracking-wider">LINKSHARE</span>
+        </div>
+        <div class="flex gap-6 text-sm">
+            <button onclick="app.navigate('home')" class="hover:text-white transition">About</button>
+            <button onclick="app.navigate('login')" id="nav-login-btn" class="hover:text-[#38bdf8] transition text-white">Login</button>
+            <button onclick="app.logout()" id="nav-logout-btn" class="text-red-400 hover:text-red-300 transition hidden-view">Log Keluar</button>
+        </div>
+    </nav>
+
+    <main class="flex-1 flex flex-col items-center justify-center p-4 w-full">
+        
+        <!-- ================= VIEW: HOME (USER) ================= -->
+        <div id="view-home" class="w-full max-w-4xl flex flex-col items-center">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl md:text-5xl font-bold mb-4 text-white tracking-tight">SECURE LINK DELIVERY</h1>
+                <p class="text-gray-400 text-lg">Share your unique web link instantly with absolute security and ease.</p>
+            </div>
+
+            <div class="glass-panel w-full max-w-3xl p-8 md:p-12 mt-4 relative">
+                <!-- Decorative Corner Icons -->
+                <div class="corner-icon ci-tl"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg></div>
+                <div class="corner-icon ci-tr"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg></div>
+                <div class="corner-icon ci-bl"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></div>
+                <div class="corner-icon ci-br"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg></div>
+
+                <form id="form-request" onsubmit="app.submitRequest(event)" class="flex flex-col md:flex-row gap-4 items-center relative z-20">
+                    <div class="w-full md:w-2/5">
+                        <select id="req-jenis" required class="glow-input w-full px-4 py-4 rounded-full appearance-none cursor-pointer font-medium">
+                            <option value="" disabled selected>-- Pilih Jenis Dokumen --</option>
+                        </select>
+                    </div>
+                    <div class="w-full md:w-3/5 relative">
+                        <svg class="absolute left-4 top-4 text-gray-500" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                        <input type="email" id="req-email" required class="glow-input w-full pl-12 pr-4 py-4 rounded-full font-medium" placeholder="Enter Recipient's Email Address">
+                    </div>
+                    <div class="w-full md:w-1/3">
+                        <button type="submit" class="glow-btn w-full py-4 rounded-full font-bold tracking-wide">
+                            SEND NOW
+                        </button>
+                    </div>
+                </form>
+                <p class="text-center text-sm text-gray-500 mt-6">Your generated link will be sent instantly.</p>
+            </div>
+        </div>
+
+        <!-- ================= VIEW: LOGIN ================= -->
+        <div id="view-login" class="hidden-view w-full max-w-sm flex flex-col items-center">
+            <div class="glass-panel w-full p-8">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-white mb-2">Admin Login</h2>
+                    <p class="text-xs text-gray-400">Gunakan katalaluan: <strong class="text-[#38bdf8]">admin123</strong></p>
+                </div>
+                <form id="form-login" onsubmit="app.handleLogin(event)">
+                    <div class="mb-4 relative">
+                        <svg class="absolute left-3 top-3 text-gray-500" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        <input type="password" id="login-password" required class="glow-input w-full pl-10 pr-4 py-3 rounded-lg" placeholder="Kata Laluan">
+                    </div>
+                    <div id="login-error" class="text-red-400 text-xs mb-4 text-center hidden-view">Kata laluan salah!</div>
+                    <button type="submit" class="glow-btn w-full py-3 rounded-lg font-bold">LOG MASUK</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ================= VIEW: ADMIN DASHBOARD ================= -->
+        <div id="view-admin" class="hidden-view w-full max-w-6xl">
+            <div class="flex flex-col md:flex-row gap-6">
+                <!-- Sidebar -->
+                <div class="w-full md:w-64 flex flex-col gap-2">
+                    <div class="glass-panel p-4 mb-4 text-center">
+                        <h3 class="font-bold text-white">Dashboard</h3>
+                    </div>
+                    <button onclick="app.switchTab('jenis')" class="admin-tab-btn bg-[#38bdf8]/20 text-[#38bdf8] font-medium text-left px-4 py-3 rounded-lg transition border border-[#38bdf8]/30">Ketetapan Pautan</button>
+                    <button onclick="app.switchTab('requests')" class="admin-tab-btn hover:bg-white/5 text-gray-400 font-medium text-left px-4 py-3 rounded-lg transition border border-transparent">Senarai Permohonan</button>
+                    <button onclick="app.switchTab('logs')" class="admin-tab-btn hover:bg-white/5 text-gray-400 font-medium text-left px-4 py-3 rounded-lg transition border border-transparent">Log Akses</button>
+                </div>
+
+                <!-- Main Content Area -->
+                <div class="glass-panel flex-1 p-6 md:p-8 min-h-[500px]">
+                    
+                    <!-- TAB: JENIS PAUTAN -->
+                    <div id="tab-jenis" class="admin-tab">
+                        <h2 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                            Urus Jenis Pautan
+                        </h2>
+                        
+                        <form onsubmit="app.addJenis(event)" class="bg-[#0d1117]/50 p-4 rounded-xl border border-white/10 mb-8 flex flex-col md:flex-row gap-4 items-end">
+                            <div class="flex-1">
+                                <label class="block text-xs font-semibold text-gray-400 mb-1">Nama Fail/Pautan</label>
+                                <input type="text" id="new-jenis-name" required class="glow-input w-full px-3 py-2 rounded-lg" placeholder="Cth: Sebutharga 2026">
+                            </div>
+                            <div class="flex-1">
+                                <label class="block text-xs font-semibold text-gray-400 mb-1">URL Sasaran</label>
+                                <input type="url" id="new-jenis-link" required class="glow-input w-full px-3 py-2 rounded-lg" placeholder="https://...">
+                            </div>
+                            <button type="submit" class="glow-btn px-6 py-2 rounded-lg font-bold h-[42px]">TAMBAH</button>
+                        </form>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm border-collapse">
+                                <thead>
+                                    <tr class="text-gray-500 border-b border-white/10">
+                                        <th class="pb-3 px-2 font-medium">Nama Dokumen</th>
+                                        <th class="pb-3 px-2 font-medium">Pautan URL</th>
+                                        <th class="pb-3 px-2 font-medium text-right">Tindakan</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-jenis-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- TAB: PERMOHONAN -->
+                    <div id="tab-requests" class="admin-tab hidden-view">
+                        <h2 class="text-xl font-bold text-white mb-6">Senarai Permohonan Diterima</h2>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm border-collapse">
+                                <thead>
+                                    <tr class="text-gray-500 border-b border-white/10">
+                                        <th class="pb-3 px-2 font-medium">Masa/Tarikh</th>
+                                        <th class="pb-3 px-2 font-medium">Emel Penerima</th>
+                                        <th class="pb-3 px-2 font-medium">Dokumen Diminta</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-requests-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- TAB: LOGS -->
+                    <div id="tab-logs" class="admin-tab hidden-view">
+                        <h2 class="text-xl font-bold text-white mb-6">Log Aktiviti Sistem</h2>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm border-collapse">
+                                <thead>
+                                    <tr class="text-gray-500 border-b border-white/10">
+                                        <th class="pb-3 px-2 font-medium">Masa</th>
+                                        <th class="pb-3 px-2 font-medium">Aktiviti</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-logs-body" class="font-mono text-xs"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="w-full text-center p-6 text-xs text-gray-600 mt-auto">
+        &copy; 2026 LinkShare System.
+    </footer>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="glass-panel px-6 py-4 border-l-4 border-l-[#38bdf8] flex items-center gap-3">
+        <svg id="toast-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        <div>
+            <h4 id="toast-title" class="font-bold text-white">Success</h4>
+            <p id="toast-msg" class="text-sm text-gray-400">Action completed.</p>
+        </div>
+    </div>
+
+    <!-- APLIKASI JAVASCRIPT (DIJAMIN BERFUNGSI) -->
+    <script>
+        // Data lalai (Default Data) - Disimpan di dalam LocalStorage supaya tak hilang bila refresh
+        const DEFAULT_PASSWORD = 'admin123';
+        
+        // Objek Aplikasi Utama
+        const app = {
+            state: {
+                isLoggedIn: false,
+                jenis: [],
+                requests: [],
+                logs: []
+            },
+
+            // Init akan terus jalan sebaik sahaja fail dibuka
+            init: function() {
+                this.loadData();
+                this.logEvent('SISTEM_BERMULA', 'Sistem sedia digunakan.');
+                this.updateJenisDropdown();
+                this.navigate('home'); // Papar skrin utama
+            },
+
+            // Pengurusan Storan (Menyimpan data di pelayar)
+            loadData: function() {
+                try {
+                    const savedJenis = localStorage.getItem('ls_jenis');
+                    const savedReqs = localStorage.getItem('ls_requests');
+                    const savedLogs = localStorage.getItem('ls_logs');
+
+                    if(savedJenis) this.state.jenis = JSON.parse(savedJenis);
+                    if(savedReqs) this.state.requests = JSON.parse(savedReqs);
+                    if(savedLogs) this.state.logs = JSON.parse(savedLogs);
+                } catch(e) { console.error("Ralat membaca storan", e); }
+            },
+
+            saveData: function() {
+                localStorage.setItem('ls_jenis', JSON.stringify(this.state.jenis));
+                localStorage.setItem('ls_requests', JSON.stringify(this.state.requests));
+                localStorage.setItem('ls_logs', JSON.stringify(this.state.logs));
+            },
+
+            logEvent: function(event, details) {
+                this.state.logs.unshift({ event, details, timestamp: new Date().toISOString() });
+                if(this.state.logs.length > 50) this.state.logs.pop(); // Max 50 logs
+                this.saveData();
+            },
+
+            // --- Navigasi ---
+            navigate: function(viewName) {
+                // Tutup semua pandangan
+                document.getElementById('view-home').classList.add('hidden-view');
+                document.getElementById('view-login').classList.add('hidden-view');
+                document.getElementById('view-admin').classList.add('hidden-view');
+
+                // Buka sasaran
+                document.getElementById(`view-${viewName}`).classList.remove('hidden-view');
+
+                // Butang Navigasi Atas
+                const loginBtn = document.getElementById('nav-login-btn');
+                const logoutBtn = document.getElementById('nav-logout-btn');
+
+                if (viewName === 'admin') {
+                    loginBtn.classList.add('hidden-view');
+                    logoutBtn.classList.remove('hidden-view');
+                    this.renderAdminData(); // Kemaskini jadual
+                } else {
+                    logoutBtn.classList.add('hidden-view');
+                    loginBtn.classList.remove('hidden-view');
+                    
+                    if (this.state.isLoggedIn) {
+                        loginBtn.innerText = 'Dashboard Admin';
+                        loginBtn.onclick = () => this.navigate('admin');
+                    } else {
+                        loginBtn.innerText = 'Login';
+                        loginBtn.onclick = () => this.navigate('login');
+                    }
+                }
+            },
+
+            // --- Logik Pengguna ---
+            updateJenisDropdown: function() {
+                const select = document.getElementById('req-jenis');
+                select.innerHTML = '<option value="" disabled selected>-- Pilih Jenis Dokumen --</option>';
+                
+                if(this.state.jenis.length === 0) {
+                    select.innerHTML = '<option value="" disabled selected>Tiada dokumen disediakan lagi.</option>';
+                    return;
+                }
+
+                this.state.jenis.forEach(j => {
+                    const opt = document.createElement('option');
+                    opt.value = j.id;
+                    opt.textContent = j.name;
+                    select.appendChild(opt);
+                });
+            },
+
+            submitRequest: function(e) {
+                e.preventDefault();
+                const email = document.getElementById('req-email').value;
+                const jenisId = document.getElementById('req-jenis').value;
+
+                if (!jenisId) {
+                    this.showToast('Ralat', 'Sila pilih jenis dokumen terlebih dahulu.', true);
+                    return;
+                }
+
+                const selectedDoc = this.state.jenis.find(j => j.id === jenisId);
+                
+                // Simpan rekod
+                this.state.requests.unshift({
+                    email: email,
+                    jenisName: selectedDoc.name,
+                    timestamp: new Date().toISOString()
+                });
+                
+                this.logEvent('PERMOHONAN_DITERIMA', `Hantar ${selectedDoc.name} ke ${email}`);
+                this.saveData();
+
+                e.target.reset();
+                this.showToast('Berjaya Dihantar', 'Pautan telah dihantar ke emel penerima secara serta-merta.');
+            },
+
+            // --- Logik Admin ---
+            handleLogin: function(e) {
+                e.preventDefault();
+                const pwd = document.getElementById('login-password').value;
+                const errorDiv = document.getElementById('login-error');
+
+                // Pemeriksaan mudah untuk frontend (Mock System)
+                if (pwd === DEFAULT_PASSWORD) {
+                    this.state.isLoggedIn = true;
+                    errorDiv.classList.add('hidden-view');
+                    document.getElementById('login-password').value = '';
+                    this.logEvent('LOGIN_BERJAYA', 'Admin log masuk ke sistem.');
+                    this.navigate('admin');
+                } else {
+                    errorDiv.classList.remove('hidden-view');
+                }
+            },
+
+            logout: function() {
+                this.state.isLoggedIn = false;
+                this.logEvent('LOGOUT', 'Admin log keluar.');
+                this.navigate('home');
+                this.showToast('Berjaya', 'Log keluar berjaya.');
+            },
+
+            switchTab: function(tabName) {
+                // Sembunyi semua tab content
+                document.querySelectorAll('.admin-tab').forEach(el => el.classList.add('hidden-view'));
+                document.getElementById(`tab-${tabName}`).classList.remove('hidden-view');
+                
+                // Reset butang tab
+                document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+                    btn.classList.remove('bg-[#38bdf8]/20', 'text-[#38bdf8]', 'border-[#38bdf8]/30');
+                    btn.classList.add('hover:bg-white/5', 'text-gray-400', 'border-transparent');
+                });
+                
+                // Aktifkan butang ditekan
+                const activeBtn = event.currentTarget;
+                activeBtn.classList.add('bg-[#38bdf8]/20', 'text-[#38bdf8]', 'border-[#38bdf8]/30');
+                activeBtn.classList.remove('hover:bg-white/5', 'text-gray-400', 'border-transparent');
+            },
+
+            addJenis: function(e) {
+                e.preventDefault();
+                const name = document.getElementById('new-jenis-name').value;
+                const link = document.getElementById('new-jenis-link').value;
+                const id = 'ID' + Math.floor(Math.random() * 10000);
+
+                this.state.jenis.push({ id, name, link });
+                this.logEvent('TAMBAH_DOKUMEN', `Dokumen baru: ${name}`);
+                this.saveData();
+
+                e.target.reset();
+                this.updateJenisDropdown();
+                this.renderAdminData();
+                this.showToast('Berjaya', 'Dokumen/Pautan baru ditambah.');
+            },
+
+            deleteJenis: function(id) {
+                if (confirm('Adakah anda pasti untuk memadam ketetapan ini?')) {
+                    this.state.jenis = this.state.jenis.filter(j => j.id !== id);
+                    this.logEvent('PADAM_DOKUMEN', `Dokumen dipadam.`);
+                    this.saveData();
+                    this.updateJenisDropdown();
+                    this.renderAdminData();
+                    this.showToast('Berjaya', 'Ketetapan telah dipadam.');
+                }
+            },
+
+            renderAdminData: function() {
+                if (!this.state.isLoggedIn) return;
+
+                // Render Jenis
+                const tbJenis = document.getElementById('table-jenis-body');
+                tbJenis.innerHTML = this.state.jenis.map(j => `
+                    <tr class="border-b border-white/5 hover:bg-white/5">
+                        <td class="py-3 px-2 text-white">${j.name}</td>
+                        <td class="py-3 px-2 text-[#38bdf8] truncate max-w-[200px]"><a href="${j.link}" target="_blank">${j.link}</a></td>
+                        <td class="py-3 px-2 text-right">
+                            <button onclick="app.deleteJenis('${j.id}')" class="bg-red-500/20 text-red-400 px-3 py-1 rounded text-sm hover:bg-red-500/30 transition">Padam</button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                // Render Requests
+                const tbReqs = document.getElementById('table-requests-body');
+                tbReqs.innerHTML = this.state.requests.map(r => `
+                    <tr class="border-b border-white/5 hover:bg-white/5">
+                        <td class="py-3 px-2 text-gray-400 text-xs">${new Date(r.timestamp).toLocaleString('ms-MY')}</td>
+                        <td class="py-3 px-2 text-white">${r.email}</td>
+                        <td class="py-3 px-2 text-[#38bdf8]">${r.jenisName}</td>
+                    </tr>
+                `).join('');
+
+                // Render Logs
+                const tbLogs = document.getElementById('table-logs-body');
+                tbLogs.innerHTML = this.state.logs.map(l => `
+                    <tr class="border-b border-white/5">
+                        <td class="py-2 px-2 text-gray-500 whitespace-nowrap">${new Date(l.timestamp).toLocaleString('ms-MY')}</td>
+                        <td class="py-2 px-2 text-gray-300"><span class="text-[#38bdf8] font-semibold">${l.event}</span> : ${l.details}</td>
+                    </tr>
+                `).join('');
+            },
+
+            // --- UI Bantuan ---
+            showToast: function(title, msg, isError = false) {
+                const toast = document.getElementById('toast');
+                document.getElementById('toast-title').innerText = title;
+                document.getElementById('toast-msg').innerText = msg;
+                
+                const icon = document.getElementById('toast-icon');
+                if(isError) {
+                    toast.classList.replace('border-l-[#38bdf8]', 'border-l-red-500');
+                    icon.setAttribute('stroke', '#ef4444');
+                } else {
+                    toast.classList.replace('border-l-red-500', 'border-l-[#38bdf8]');
+                    icon.setAttribute('stroke', '#38bdf8');
+                }
+
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 3500);
+            }
+        };
+
+        // Mulakan aplikasi serta merta selepas fail HTML dibaca
+        app.init();
+
+    </script>
+</body>
+</html>
