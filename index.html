@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LinkShare System</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- EmailJS SDK -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
@@ -50,10 +53,17 @@
             color: white;
             text-shadow: 0 1px 2px rgba(0,0,0,0.5);
             transition: all 0.3s ease;
+            cursor: pointer;
         }
-        .glow-btn:hover {
+        .glow-btn:hover:not(:disabled) {
             box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
             transform: translateY(-1px);
+        }
+        .glow-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            background: #1f2937;
+            border-color: #374151;
         }
 
         /* Animated corner icons */
@@ -92,8 +102,8 @@
             <span class="text-[#38bdf8] group-hover:text-white transition font-bold text-xl tracking-wider">LINKSHARE</span>
         </div>
         <div class="flex gap-6 text-sm">
-            <button onclick="app.navigate('home')" class="hover:text-white transition">About</button>
-            <button onclick="app.navigate('login')" id="nav-login-btn" class="hover:text-[#38bdf8] transition text-white">Login</button>
+            <button onclick="app.navigate('home')" class="hover:text-white transition">Utama</button>
+            <button onclick="app.navigate('login')" id="nav-login-btn" class="hover:text-[#38bdf8] transition text-white">Log Masuk</button>
             <button onclick="app.logout()" id="nav-logout-btn" class="text-red-400 hover:text-red-300 transition hidden-view">Log Keluar</button>
         </div>
     </nav>
@@ -104,7 +114,7 @@
         <div id="view-home" class="w-full max-w-4xl flex flex-col items-center">
             <div class="text-center mb-12">
                 <h1 class="text-4xl md:text-5xl font-bold mb-4 text-white tracking-tight">SECURE LINK DELIVERY</h1>
-                <p class="text-gray-400 text-lg">Share your unique web link instantly with absolute security and ease.</p>
+                <p class="text-gray-400 text-lg">Pilih dokumen yang diperlukan, dan sistem akan menghantar pautan terus ke emel anda.</p>
             </div>
 
             <div class="glass-panel w-full max-w-3xl p-8 md:p-12 mt-4 relative">
@@ -122,15 +132,15 @@
                     </div>
                     <div class="w-full md:w-3/5 relative">
                         <svg class="absolute left-4 top-4 text-gray-500" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                        <input type="email" id="req-email" required class="glow-input w-full pl-12 pr-4 py-4 rounded-full font-medium" placeholder="Enter Recipient's Email Address">
+                        <input type="email" id="req-email" required class="glow-input w-full pl-12 pr-4 py-4 rounded-full font-medium" placeholder="Alamat Emel Anda">
                     </div>
                     <div class="w-full md:w-1/3">
-                        <button type="submit" class="glow-btn w-full py-4 rounded-full font-bold tracking-wide">
-                            SEND NOW
+                        <button type="submit" id="btn-submit-request" class="glow-btn w-full py-4 rounded-full font-bold tracking-wide">
+                            HANTAR
                         </button>
                     </div>
                 </form>
-                <p class="text-center text-sm text-gray-500 mt-6">Your generated link will be sent instantly.</p>
+                <p class="text-center text-sm text-gray-500 mt-6">Pautan akan dijana dan dihantar secara automatik melalui sistem (EmailJS).</p>
             </div>
         </div>
 
@@ -177,11 +187,11 @@
                         
                         <form onsubmit="app.addJenis(event)" class="bg-[#0d1117]/50 p-4 rounded-xl border border-white/10 mb-8 flex flex-col md:flex-row gap-4 items-end">
                             <div class="flex-1">
-                                <label class="block text-xs font-semibold text-gray-400 mb-1">Nama Fail/Pautan</label>
-                                <input type="text" id="new-jenis-name" required class="glow-input w-full px-3 py-2 rounded-lg" placeholder="Cth: Sebutharga 2026">
+                                <label class="block text-xs font-semibold text-gray-400 mb-1">Nama Fail/Pautan (Cth: Brosur 2026)</label>
+                                <input type="text" id="new-jenis-name" required class="glow-input w-full px-3 py-2 rounded-lg" placeholder="Nama Dokumen">
                             </div>
                             <div class="flex-1">
-                                <label class="block text-xs font-semibold text-gray-400 mb-1">URL Sasaran</label>
+                                <label class="block text-xs font-semibold text-gray-400 mb-1">URL Sasaran (Yang akan diemel)</label>
                                 <input type="url" id="new-jenis-link" required class="glow-input w-full px-3 py-2 rounded-lg" placeholder="https://...">
                             </div>
                             <button type="submit" class="glow-btn px-6 py-2 rounded-lg font-bold h-[42px]">TAMBAH</button>
@@ -203,14 +213,15 @@
 
                     <!-- TAB: PERMOHONAN -->
                     <div id="tab-requests" class="admin-tab hidden-view">
-                        <h2 class="text-xl font-bold text-white mb-6">Senarai Permohonan Diterima</h2>
+                        <h2 class="text-xl font-bold text-white mb-6">Senarai Permohonan & Emel</h2>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left text-sm border-collapse">
                                 <thead>
                                     <tr class="text-gray-500 border-b border-white/10">
-                                        <th class="pb-3 px-2 font-medium">Masa/Tarikh</th>
+                                        <th class="pb-3 px-2 font-medium">Tarikh Hantar</th>
                                         <th class="pb-3 px-2 font-medium">Emel Penerima</th>
                                         <th class="pb-3 px-2 font-medium">Dokumen Diminta</th>
+                                        <th class="pb-3 px-2 font-medium">Status API EmailJS</th>
                                     </tr>
                                 </thead>
                                 <tbody id="table-requests-body"></tbody>
@@ -241,7 +252,7 @@
     </main>
 
     <footer class="w-full text-center p-6 text-xs text-gray-600 mt-auto">
-        &copy; 2026 LinkShare System.
+        &copy; 2026 LinkShare System. Diintegrasikan dengan EmailJS.
     </footer>
 
     <!-- TOAST NOTIFICATION -->
@@ -253,9 +264,32 @@
         </div>
     </div>
 
-    <!-- APLIKASI JAVASCRIPT (DIJAMIN BERFUNGSI) -->
-    <script>
-        // Data lalai (Default Data) - Disimpan di dalam LocalStorage supaya tak hilang bila refresh
+    <!-- APLIKASI JAVASCRIPT -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // === KONFIGURASI EMAILJS KEKUNCI ANDA ===
+        const EMAILJS_PUBLIC_KEY = "aUKVQLR88dP6FgUUv";
+        const EMAILJS_SERVICE_ID = "service_hgxwkgj";
+        const EMAILJS_TEMPLATE_ID = "template_3xc5vhs";
+
+        // Inisialisasi EmailJS
+        emailjs.init(EMAILJS_PUBLIC_KEY);
+
+        // === KONFIGURASI FIREBASE ANDA ===
+        const firebaseConfig = {
+            apiKey: "AIzaSyDoqzlqifrHbbBYviaYGhQh-QUoFqRw6Iw",
+            authDomain: "docuvault-v2.firebaseapp.com",
+            projectId: "docuvault-v2",
+            storageBucket: "docuvault-v2.firebasestorage.app",
+            messagingSenderId: "734492192690",
+            appId: "1:734492192690:web:2fc5be9050a2d0fd6b3eab"
+        };
+        const firebaseApp = initializeApp(firebaseConfig);
+        const db = getFirestore(firebaseApp);
+
+        // Data lalai (Sesi log masuk admin)
         const DEFAULT_PASSWORD = 'admin123';
         
         // Objek Aplikasi Utama
@@ -267,57 +301,83 @@
                 logs: []
             },
 
-            // Init akan terus jalan sebaik sahaja fail dibuka
             init: function() {
-                this.loadData();
-                this.logEvent('SISTEM_BERMULA', 'Sistem sedia digunakan.');
-                this.updateJenisDropdown();
-                this.navigate('home'); // Papar skrin utama
+                // Kekalkan sesi admin jika page di-refresh
+                if(sessionStorage.getItem('ls_admin_loggedin') === 'true') {
+                    this.state.isLoggedIn = true;
+                }
+                
+                this.setupRealtimeListeners();
+                
+                if(!sessionStorage.getItem('ls_first_load')) {
+                    this.logEvent('SISTEM_BERMULA', 'Sistem (Firebase + EmailJS) dimuatkan.');
+                    sessionStorage.setItem('ls_first_load', 'true');
+                }
+                
+                this.navigate('home');
             },
 
-            // Pengurusan Storan (Menyimpan data di pelayar)
-            loadData: function() {
+            // --- STREAMING_CHUNK:Firebase Realtime Data... ---
+            setupRealtimeListeners: function() {
+                // 1. Firebase koleksi 'jenis'
+                const qJenis = query(collection(db, "jenis"), orderBy("timestamp", "desc"));
+                onSnapshot(qJenis, (snapshot) => {
+                    this.state.jenis = [];
+                    snapshot.forEach((doc) => {
+                        this.state.jenis.push({ id: doc.id, ...doc.data() });
+                    });
+                    this.updateJenisDropdown();
+                    this.renderAdminData();
+                }, (error) => console.error("Ralat Firebase Jenis:", error));
+
+                // 2. Firebase koleksi 'requests'
+                const qReq = query(collection(db, "requests"), orderBy("timestamp", "desc"));
+                onSnapshot(qReq, (snapshot) => {
+                    this.state.requests = [];
+                    snapshot.forEach((doc) => {
+                        this.state.requests.push({ id: doc.id, ...doc.data() });
+                    });
+                    this.renderAdminData();
+                }, (error) => console.error("Ralat Firebase Requests:", error));
+
+                // 3. Firebase koleksi 'logs'
+                const qLogs = query(collection(db, "logs"), orderBy("timestamp", "desc"));
+                onSnapshot(qLogs, (snapshot) => {
+                    this.state.logs = [];
+                    snapshot.forEach((doc) => {
+                        this.state.logs.push({ id: doc.id, ...doc.data() });
+                    });
+                    this.renderAdminData();
+                }, (error) => console.error("Ralat Firebase Logs:", error));
+            },
+
+            logEvent: async function(eventTitle, details) {
                 try {
-                    const savedJenis = localStorage.getItem('ls_jenis');
-                    const savedReqs = localStorage.getItem('ls_requests');
-                    const savedLogs = localStorage.getItem('ls_logs');
-
-                    if(savedJenis) this.state.jenis = JSON.parse(savedJenis);
-                    if(savedReqs) this.state.requests = JSON.parse(savedReqs);
-                    if(savedLogs) this.state.logs = JSON.parse(savedLogs);
-                } catch(e) { console.error("Ralat membaca storan", e); }
+                    await addDoc(collection(db, "logs"), {
+                        event: eventTitle,
+                        details: details,
+                        timestamp: new Date().toISOString()
+                    });
+                } catch (e) {
+                    console.error("Gagal menyimpan log:", e);
+                }
             },
 
-            saveData: function() {
-                localStorage.setItem('ls_jenis', JSON.stringify(this.state.jenis));
-                localStorage.setItem('ls_requests', JSON.stringify(this.state.requests));
-                localStorage.setItem('ls_logs', JSON.stringify(this.state.logs));
-            },
-
-            logEvent: function(event, details) {
-                this.state.logs.unshift({ event, details, timestamp: new Date().toISOString() });
-                if(this.state.logs.length > 50) this.state.logs.pop(); // Max 50 logs
-                this.saveData();
-            },
-
-            // --- Navigasi ---
+            // --- STREAMING_CHUNK:Navigasi & UI... ---
             navigate: function(viewName) {
-                // Tutup semua pandangan
                 document.getElementById('view-home').classList.add('hidden-view');
                 document.getElementById('view-login').classList.add('hidden-view');
                 document.getElementById('view-admin').classList.add('hidden-view');
 
-                // Buka sasaran
                 document.getElementById(`view-${viewName}`).classList.remove('hidden-view');
 
-                // Butang Navigasi Atas
                 const loginBtn = document.getElementById('nav-login-btn');
                 const logoutBtn = document.getElementById('nav-logout-btn');
 
                 if (viewName === 'admin') {
                     loginBtn.classList.add('hidden-view');
                     logoutBtn.classList.remove('hidden-view');
-                    this.renderAdminData(); // Kemaskini jadual
+                    this.renderAdminData();
                 } else {
                     logoutBtn.classList.add('hidden-view');
                     loginBtn.classList.remove('hidden-view');
@@ -326,19 +386,18 @@
                         loginBtn.innerText = 'Dashboard Admin';
                         loginBtn.onclick = () => this.navigate('admin');
                     } else {
-                        loginBtn.innerText = 'Login';
+                        loginBtn.innerText = 'Log Masuk';
                         loginBtn.onclick = () => this.navigate('login');
                     }
                 }
             },
 
-            // --- Logik Pengguna ---
             updateJenisDropdown: function() {
                 const select = document.getElementById('req-jenis');
                 select.innerHTML = '<option value="" disabled selected>-- Pilih Jenis Dokumen --</option>';
                 
                 if(this.state.jenis.length === 0) {
-                    select.innerHTML = '<option value="" disabled selected>Tiada dokumen disediakan lagi.</option>';
+                    select.innerHTML = '<option value="" disabled selected>Tiada dokumen disediakan lagi. Sila suruh Admin tambah.</option>';
                     return;
                 }
 
@@ -350,7 +409,8 @@
                 });
             },
 
-            submitRequest: function(e) {
+            // --- STREAMING_CHUNK:EmailJS & Requests Logic... ---
+            submitRequest: async function(e) {
                 e.preventDefault();
                 const email = document.getElementById('req-email').value;
                 const jenisId = document.getElementById('req-jenis').value;
@@ -361,30 +421,61 @@
                 }
 
                 const selectedDoc = this.state.jenis.find(j => j.id === jenisId);
+                const btn = document.getElementById('btn-submit-request');
                 
-                // Simpan rekod
-                this.state.requests.unshift({
-                    email: email,
-                    jenisName: selectedDoc.name,
-                    timestamp: new Date().toISOString()
-                });
-                
-                this.logEvent('PERMOHONAN_DITERIMA', `Hantar ${selectedDoc.name} ke ${email}`);
-                this.saveData();
+                btn.innerText = "MENGHANTAR EMEL...";
+                btn.disabled = true;
 
-                e.target.reset();
-                this.showToast('Berjaya Dihantar', 'Pautan telah dihantar ke emel penerima secara serta-merta.');
+                const templateParams = {
+                    user_email: email,
+                    document_name: selectedDoc.name,
+                    document_link: selectedDoc.link,
+                    reply_to: "noreply@linksharesystem.com" 
+                };
+
+                try {
+                    // Panggil API EmailJS
+                    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
+                    
+                    // Simpan rekod Berjaya ke Firebase
+                    await addDoc(collection(db, "requests"), {
+                        email: email,
+                        jenisName: selectedDoc.name,
+                        status: "Berjaya (EmailJS)",
+                        timestamp: new Date().toISOString()
+                    });
+                    
+                    this.logEvent('EMEL_BERJAYA', `Hantar ${selectedDoc.name} ke ${email}`);
+                    this.showToast('Berjaya Dihantar', 'Semak inbox atau spam folder emel anda.');
+                    e.target.reset();
+
+                } catch (error) {
+                    console.error('EmailJS Error:', error);
+                    
+                    // Simpan rekod Gagal ke Firebase
+                    await addDoc(collection(db, "requests"), {
+                        email: email,
+                        jenisName: selectedDoc.name,
+                        status: "Gagal Dihantar",
+                        timestamp: new Date().toISOString()
+                    });
+                    this.logEvent('EMEL_GAGAL', `Ralat hantar ke ${email}. (Semak log console)`);
+                    this.showToast('Ralat EmailJS', 'Sistem tidak dapat menghantar emel. Sila cuba sebentar lagi.', true);
+                }
+
+                btn.innerText = "HANTAR";
+                btn.disabled = false;
             },
 
-            // --- Logik Admin ---
+            // --- STREAMING_CHUNK:Admin and UI logics... ---
             handleLogin: function(e) {
                 e.preventDefault();
                 const pwd = document.getElementById('login-password').value;
                 const errorDiv = document.getElementById('login-error');
 
-                // Pemeriksaan mudah untuk frontend (Mock System)
                 if (pwd === DEFAULT_PASSWORD) {
                     this.state.isLoggedIn = true;
+                    sessionStorage.setItem('ls_admin_loggedin', 'true');
                     errorDiv.classList.add('hidden-view');
                     document.getElementById('login-password').value = '';
                     this.logEvent('LOGIN_BERJAYA', 'Admin log masuk ke sistem.');
@@ -396,52 +487,57 @@
 
             logout: function() {
                 this.state.isLoggedIn = false;
+                sessionStorage.removeItem('ls_admin_loggedin');
                 this.logEvent('LOGOUT', 'Admin log keluar.');
                 this.navigate('home');
                 this.showToast('Berjaya', 'Log keluar berjaya.');
             },
 
             switchTab: function(tabName) {
-                // Sembunyi semua tab content
                 document.querySelectorAll('.admin-tab').forEach(el => el.classList.add('hidden-view'));
                 document.getElementById(`tab-${tabName}`).classList.remove('hidden-view');
                 
-                // Reset butang tab
                 document.querySelectorAll('.admin-tab-btn').forEach(btn => {
                     btn.classList.remove('bg-[#38bdf8]/20', 'text-[#38bdf8]', 'border-[#38bdf8]/30');
                     btn.classList.add('hover:bg-white/5', 'text-gray-400', 'border-transparent');
                 });
                 
-                // Aktifkan butang ditekan
                 const activeBtn = event.currentTarget;
                 activeBtn.classList.add('bg-[#38bdf8]/20', 'text-[#38bdf8]', 'border-[#38bdf8]/30');
                 activeBtn.classList.remove('hover:bg-white/5', 'text-gray-400', 'border-transparent');
             },
 
-            addJenis: function(e) {
+            addJenis: async function(e) {
                 e.preventDefault();
                 const name = document.getElementById('new-jenis-name').value;
                 const link = document.getElementById('new-jenis-link').value;
-                const id = 'ID' + Math.floor(Math.random() * 10000);
 
-                this.state.jenis.push({ id, name, link });
-                this.logEvent('TAMBAH_DOKUMEN', `Dokumen baru: ${name}`);
-                this.saveData();
-
-                e.target.reset();
-                this.updateJenisDropdown();
-                this.renderAdminData();
-                this.showToast('Berjaya', 'Dokumen/Pautan baru ditambah.');
+                try {
+                    await addDoc(collection(db, "jenis"), {
+                        name: name,
+                        link: link,
+                        timestamp: new Date().toISOString()
+                    });
+                    
+                    this.logEvent('TAMBAH_DOKUMEN', `Dokumen baru: ${name}`);
+                    e.target.reset();
+                    this.showToast('Berjaya', 'Dokumen/Pautan baru ditambah.');
+                } catch(error) {
+                    console.error("Gagal tambah:", error);
+                    this.showToast('Ralat', 'Gagal simpan pangkalan data.', true);
+                }
             },
 
-            deleteJenis: function(id) {
+            deleteJenis: async function(id) {
                 if (confirm('Adakah anda pasti untuk memadam ketetapan ini?')) {
-                    this.state.jenis = this.state.jenis.filter(j => j.id !== id);
-                    this.logEvent('PADAM_DOKUMEN', `Dokumen dipadam.`);
-                    this.saveData();
-                    this.updateJenisDropdown();
-                    this.renderAdminData();
-                    this.showToast('Berjaya', 'Ketetapan telah dipadam.');
+                    try {
+                        await deleteDoc(doc(db, "jenis", id));
+                        this.logEvent('PADAM_DOKUMEN', `Dokumen dipadam dari Cloud.`);
+                        this.showToast('Berjaya', 'Ketetapan telah dipadam.');
+                    } catch(error) {
+                        console.error("Gagal padam:", error);
+                        this.showToast('Ralat', 'Gagal padam dari pangkalan data.', true);
+                    }
                 }
             },
 
@@ -466,13 +562,14 @@
                     <tr class="border-b border-white/5 hover:bg-white/5">
                         <td class="py-3 px-2 text-gray-400 text-xs">${new Date(r.timestamp).toLocaleString('ms-MY')}</td>
                         <td class="py-3 px-2 text-white">${r.email}</td>
-                        <td class="py-3 px-2 text-[#38bdf8]">${r.jenisName}</td>
+                        <td class="py-3 px-2 text-gray-300">${r.jenisName}</td>
+                        <td class="py-3 px-2 font-semibold text-xs ${r.status.includes('Berjaya') ? 'text-green-400' : 'text-red-400'}">${r.status}</td>
                     </tr>
                 `).join('');
 
                 // Render Logs
                 const tbLogs = document.getElementById('table-logs-body');
-                tbLogs.innerHTML = this.state.logs.map(l => `
+                tbLogs.innerHTML = this.state.logs.slice(0, 50).map(l => `
                     <tr class="border-b border-white/5">
                         <td class="py-2 px-2 text-gray-500 whitespace-nowrap">${new Date(l.timestamp).toLocaleString('ms-MY')}</td>
                         <td class="py-2 px-2 text-gray-300"><span class="text-[#38bdf8] font-semibold">${l.event}</span> : ${l.details}</td>
@@ -480,7 +577,6 @@
                 `).join('');
             },
 
-            // --- UI Bantuan ---
             showToast: function(title, msg, isError = false) {
                 const toast = document.getElementById('toast');
                 document.getElementById('toast-title').innerText = title;
@@ -500,7 +596,10 @@
             }
         };
 
-        // Mulakan aplikasi serta merta selepas fail HTML dibaca
+        // Dedahkan 'app' ke skop global supaya fungsi onClick HTML dapat menggunakannya
+        window.app = app;
+
+        // Mulakan aplikasi serta merta
         app.init();
 
     </script>
