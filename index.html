@@ -114,7 +114,7 @@
         <div id="view-home" class="w-full max-w-4xl flex flex-col items-center">
             <div class="text-center mb-12">
                 <h1 class="text-4xl md:text-5xl font-bold mb-4 text-white tracking-tight">SECURE LINK DELIVERY</h1>
-                <p class="text-gray-400 text-lg">Pilih dokumen yang diperlukan, dan sistem akan menghantar pautan terus ke emel anda.</p>
+                <p class="text-gray-400 text-lg">Pilih Kategori yang diperlukan, dan sistem akan menghantar pautan terus ke emel anda.</p>
             </div>
 
             <div class="glass-panel w-full max-w-3xl p-8 md:p-12 mt-4 relative">
@@ -140,7 +140,7 @@
                         </button>
                     </div>
                 </form>
-                <p class="text-center text-sm text-gray-500 mt-6">Pautan akan dijana dan dihantar secara automatik melalui sistem (EmailJS).</p>
+                <p class="text-center text-sm text-gray-500 mt-6">Pautan akan dijana dan dihantar secara automatik melalui sistem.</p>
             </div>
         </div>
 
@@ -149,7 +149,7 @@
             <div class="glass-panel w-full p-8">
                 <div class="text-center mb-6">
                     <h2 class="text-2xl font-bold text-white mb-2">Admin Login</h2>
-                    <p class="text-xs text-gray-400">Gunakan katalaluan: <strong class="text-[#38bdf8]">admin123</strong></p>
+                    <!-- Teks pendedahan kata laluan telah dibuang di sini -->
                 </div>
                 <form id="form-login" onsubmit="app.handleLogin(event)">
                     <div class="mb-4 relative">
@@ -173,6 +173,7 @@
                     <button onclick="app.switchTab('jenis')" class="admin-tab-btn bg-[#38bdf8]/20 text-[#38bdf8] font-medium text-left px-4 py-3 rounded-lg transition border border-[#38bdf8]/30">Ketetapan Pautan</button>
                     <button onclick="app.switchTab('requests')" class="admin-tab-btn hover:bg-white/5 text-gray-400 font-medium text-left px-4 py-3 rounded-lg transition border border-transparent">Senarai Permohonan</button>
                     <button onclick="app.switchTab('logs')" class="admin-tab-btn hover:bg-white/5 text-gray-400 font-medium text-left px-4 py-3 rounded-lg transition border border-transparent">Log Akses</button>
+                    <button onclick="app.switchTab('settings')" class="admin-tab-btn hover:bg-white/5 text-gray-400 font-medium text-left px-4 py-3 rounded-lg transition border border-transparent">Tetapan Akaun</button>
                 </div>
 
                 <!-- Main Content Area -->
@@ -245,6 +246,25 @@
                         </div>
                     </div>
 
+                    <!-- TAB: TETAPAN (TUKAR PASSWORD) -->
+                    <div id="tab-settings" class="admin-tab hidden-view">
+                        <h2 class="text-xl font-bold text-white mb-6">Tetapan Akaun</h2>
+                        <div class="bg-[#0d1117]/50 p-6 rounded-xl border border-white/10 max-w-md">
+                            <h3 class="font-semibold text-gray-300 mb-4">Tukar Kata Laluan Admin</h3>
+                            <form onsubmit="app.changePassword(event)" class="flex flex-col gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-400 mb-1">Kata Laluan Semasa</label>
+                                    <input type="password" id="cp-current" required class="glow-input w-full px-3 py-2 rounded-lg" placeholder="Masukkan kata laluan sedia ada">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-400 mb-1">Kata Laluan Baru</label>
+                                    <input type="password" id="cp-new" required minlength="6" class="glow-input w-full px-3 py-2 rounded-lg" placeholder="Minima 6 aksara">
+                                </div>
+                                <button type="submit" class="glow-btn px-6 py-2 rounded-lg font-bold mt-2">SIMPAN KATA LALUAN</button>
+                            </form>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -252,7 +272,7 @@
     </main>
 
     <footer class="w-full text-center p-6 text-xs text-gray-600 mt-auto">
-        &copy; 2026 LinkShare System. Diintegrasikan dengan EmailJS.
+        &copy; 2026 LinkShare System x Aidee Creatives.
     </footer>
 
     <!-- TOAST NOTIFICATION -->
@@ -267,7 +287,7 @@
     <!-- APLIKASI JAVASCRIPT -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, setDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         // === KONFIGURASI EMAILJS KEKUNCI ANDA ===
         const EMAILJS_PUBLIC_KEY = "aUKVQLR88dP6FgUUv";
@@ -288,14 +308,12 @@
         };
         const firebaseApp = initializeApp(firebaseConfig);
         const db = getFirestore(firebaseApp);
-
-        // Data lalai (Sesi log masuk admin)
-        const DEFAULT_PASSWORD = 'admin123';
         
         // Objek Aplikasi Utama
         const app = {
             state: {
                 isLoggedIn: false,
+                adminPassword: 'admin123', // Akan dikemaskini dari Firebase jika telah diubah
                 jenis: [],
                 requests: [],
                 logs: []
@@ -349,6 +367,15 @@
                     });
                     this.renderAdminData();
                 }, (error) => console.error("Ralat Firebase Logs:", error));
+
+                // 4. Firebase tetapan kata laluan admin
+                onSnapshot(doc(db, "config", "admin"), (docSnap) => {
+                    if (docSnap.exists() && docSnap.data().password) {
+                        this.state.adminPassword = docSnap.data().password;
+                    } else {
+                        this.state.adminPassword = 'admin123'; // Lalai jika belum pernah ditukar
+                    }
+                }, (error) => console.error("Ralat Firebase Config:", error));
             },
 
             logEvent: async function(eventTitle, details) {
@@ -473,7 +500,7 @@
                 const pwd = document.getElementById('login-password').value;
                 const errorDiv = document.getElementById('login-error');
 
-                if (pwd === DEFAULT_PASSWORD) {
+                if (pwd === this.state.adminPassword) {
                     this.state.isLoggedIn = true;
                     sessionStorage.setItem('ls_admin_loggedin', 'true');
                     errorDiv.classList.add('hidden-view');
@@ -503,8 +530,32 @@
                 });
                 
                 const activeBtn = event.currentTarget;
-                activeBtn.classList.add('bg-[#38bdf8]/20', 'text-[#38bdf8]', 'border-[#38bdf8]/30');
-                activeBtn.classList.remove('hover:bg-white/5', 'text-gray-400', 'border-transparent');
+                if(activeBtn) {
+                    activeBtn.classList.add('bg-[#38bdf8]/20', 'text-[#38bdf8]', 'border-[#38bdf8]/30');
+                    activeBtn.classList.remove('hover:bg-white/5', 'text-gray-400', 'border-transparent');
+                }
+            },
+
+            changePassword: async function(e) {
+                e.preventDefault();
+                const currentPwd = document.getElementById('cp-current').value;
+                const newPwd = document.getElementById('cp-new').value;
+
+                if (currentPwd !== this.state.adminPassword) {
+                    this.showToast('Ralat', 'Kata laluan semasa tidak tepat!', true);
+                    return;
+                }
+
+                try {
+                    // Simpan kata laluan baru ke Firebase (koleksi 'config', dokumen 'admin')
+                    await setDoc(doc(db, "config", "admin"), { password: newPwd });
+                    this.logEvent('TUKAR_KATALALUAN', 'Admin telah menukar kata laluan sistem.');
+                    this.showToast('Berjaya', 'Kata laluan anda telah berjaya ditukar.');
+                    e.target.reset();
+                } catch (error) {
+                    console.error("Gagal tukar kata laluan:", error);
+                    this.showToast('Ralat', 'Sistem ralat, sila cuba sebentar lagi.', true);
+                }
             },
 
             addJenis: async function(e) {
